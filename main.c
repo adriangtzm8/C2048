@@ -16,8 +16,20 @@ typedef enum
     UP
 } Direction;
 
+typedef enum
+{
+    BACKGROUND_GRAY,
+    BACKGROUND_BEIGE,
+    BACKROUND_LIGHT_ORANGE,
+    BACKGROUND_ORANGE,
+    BACKGROUND_LIGTH_RED,
+    BACKGROUND_RED,
+    BACKGROUND_YELLOW,
+} BackgroundColors;
+
 static int grid[4][4];
 static bool has_combined[4][4];
+static Color background_colors[BACKGROUND_YELLOW + 1];
 
 const int grid_rows = 4;
 const int grid_cols = 4;
@@ -28,22 +40,21 @@ void display_grid();
 void move_tiles(Direction dir);
 void reset_combined();
 bool can_move(Direction dir);
+
+// UI
+void draw_grid();
+
 int main()
 {
     srandom(time(NULL));
-    bool playing = true;
+    InitWindow(WIDTH, HEIGHT, "2048");
     place_random();
-    while (playing)
+    while (!WindowShouldClose())
     {
-        printf("\e[1;1H\e[2J");
-
-        display_grid();
-
-        char input;
-        scanf(" %c", &input);
+        int key = GetKeyPressed();
         Direction dir = NONE;
 
-        switch (input)
+        switch (key)
         {
             case 'W': dir = UP; break;
             case 'A': dir = LEFT; break;
@@ -58,8 +69,45 @@ int main()
             reset_combined();
             place_random();
         }
+
+        BeginDrawing();
+        draw_grid();
+        EndDrawing();
     }
+
+    CloseWindow();
     return 0;
+
+    // Terminal version
+    // bool playing = true;
+    // place_random();
+    // while (playing)
+    // {
+    //     printf("\e[1;1H\e[2J");
+
+    //     display_grid();
+
+    //     char input;
+    //     scanf(" %c", &input);
+    //     Direction dir = NONE;
+
+    //     switch (input)
+    //     {
+    //         case 'W': dir = UP; break;
+    //         case 'A': dir = LEFT; break;
+    //         case 'S': dir = DOWN; break;
+    //         case 'D': dir = RIGHT; break;
+    //         default: break;
+    //     }
+
+    //     if (can_move(dir))
+    //     {
+    //         move_tiles(dir);
+    //         reset_combined();
+    //         place_random();
+    //     }
+    // }
+    // return 0;
 }
 
 void place_random()
@@ -296,5 +344,22 @@ bool can_move(Direction dir)
             break;
         case NONE: return false;
         default: return false;
+    }
+}
+
+void draw_grid()
+{
+    for (int i = 0; i < 4; ++i)
+    {
+        for (int j = 0; j < 4; ++j)
+        {
+            Rectangle rec = {j * 200 + 10, i * 200 + 10, 180, 180};
+            DrawRectangleRounded(rec, 0.20f, 20, WHITE);
+            if (grid[i][j] != 0)
+            {
+                const char* txt = TextFormat("%d", grid[i][j]);
+                DrawText(txt, rec.x + (rec.width / 2), rec.y + (rec.height / 2), 64, BLUE);
+            }
+        }
     }
 }
