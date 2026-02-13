@@ -3,10 +3,12 @@
 #include <stdio.h>
 #include <raylib.h>
 #include <time.h>
+#include <math.h>
 
 #define WIDTH 800
 #define HEIGHT 800
 
+#define TXT_FONTSIZE 64
 typedef enum
 {
     NONE = 0,
@@ -18,22 +20,36 @@ typedef enum
 
 typedef enum
 {
-    BACKGROUND_GRAY,
+    BACKGROUND_GRAY = 0,
+    BACKGROUND_WHITE,
     BACKGROUND_BEIGE,
     BACKROUND_LIGHT_ORANGE,
     BACKGROUND_ORANGE,
     BACKGROUND_LIGTH_RED,
     BACKGROUND_RED,
     BACKGROUND_YELLOW,
+    BACKGROUND_YELLOW_BRIGHT,
+    BACKGROUND_BLACK,
 } BackgroundColors;
 
 static int grid[4][4];
 static bool has_combined[4][4];
-static Color background_colors[BACKGROUND_YELLOW + 1];
+static Color background_colors[BACKGROUND_BLACK + 1] = {
+    {0x44, 0x44, 0x44, 0x59}, // 0
+    {0xfa, 0xf8, 0xef, 0xff}, // 2
+    {0xed, 0xe0, 0xc8, 0xff}, // 4
+    {0xf2, 0xb1, 0x79, 0xff}, // 8
+    {0xf5, 0x95, 0x63, 0xff}, // 16
+    {0xf6, 0x7c, 0x5f, 0xff}, // 32
+    {0xf6, 0x5e, 0x3b, 0xff}, // 64
+    {0xed, 0xcf, 0x72, 0xff}, // 128
+    {0xed, 0xcc, 0x61, 0xff}, // 256
+    {0x00, 0x00, 0x00, 0xff}, // > 256
+};
 
 const int grid_rows = 4;
 const int grid_cols = 4;
-static Vector2 dirs[4] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
+// static Vector2 dirs[4] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
 
 void place_random();
 void display_grid();
@@ -304,7 +320,7 @@ bool can_move(Direction dir)
                 for (int j = grid_cols - 1; j >= 0; --j)
                 {
                     if (grid[i][j] == 0) continue;
-                    if (j + 1 < grid_cols && grid[i][j + 1] == 0 || grid[i][j] == grid[i][j + 1]) return true;
+                    if ((j + 1 < grid_cols && grid[i][j + 1] == 0) || grid[i][j] == grid[i][j + 1]) return true;
                 }
             }
             return false;
@@ -315,7 +331,7 @@ bool can_move(Direction dir)
                 for (int i = grid_rows - 1; i >= 0; --i)
                 {
                     if (grid[i][j] == 0) continue;
-                    if (i + 1 < grid_rows && grid[i + 1][j] == 0 || grid[i][j] == grid[i + 1][j]) return true;
+                    if ((i + 1 < grid_rows && grid[i + 1][j] == 0) ||grid[i][j] == grid[i + 1][j]) return true;
                 }
             }
             return false;
@@ -326,7 +342,7 @@ bool can_move(Direction dir)
                 for (int j = 0; j < grid_cols; ++j)
                 {
                     if (grid[i][j] == 0) continue;
-                    if (j - 1 >= 0 && grid[i][j - 1] == 0 || grid[i][j] == grid[i][j - 1]) return true;
+                    if ((j - 1 >= 0 && grid[i][j - 1] == 0) || grid[i][j] == grid[i][j - 1]) return true;
                 }
             }
             return false;
@@ -337,7 +353,7 @@ bool can_move(Direction dir)
                 for (int i = 0; i < grid_rows; ++i)
                 {
                     if (grid[i][j] == 0) continue;
-                    if (i - 1 >= 0 && grid[i - 1][j] == 0 || grid[i][j] == grid[i - 1][j]) return true;
+                    if ((i - 1 >= 0 && grid[i - 1][j] == 0) || grid[i][j] == grid[i - 1][j]) return true;
                 }
             }
             return false;
@@ -353,12 +369,19 @@ void draw_grid()
     {
         for (int j = 0; j < 4; ++j)
         {
+            int n = grid[i][j];
             Rectangle rec = {j * 200 + 10, i * 200 + 10, 180, 180};
-            DrawRectangleRounded(rec, 0.20f, 20, WHITE);
-            if (grid[i][j] != 0)
+            int idx = n == 0 ? 0 : (n > 256 ? BACKGROUND_BLACK : (int)log(n)); // used to map n to idx in background_colors array
+            Color background = background_colors[idx];
+
+            DrawRectangleRounded(rec, 0.20f, 20, background);
+            if (n != 0)
             {
-                const char* txt = TextFormat("%d", grid[i][j]);
-                DrawText(txt, rec.x + (rec.width / 2), rec.y + (rec.height / 2), 64, BLUE);
+                const char* txt = TextFormat("%d", n);
+                unsigned int txt_length = MeasureText(txt, TXT_FONTSIZE);
+                Color txt_color = (background.r + background.g + background.b) > 382 ? BLACK : WHITE;
+
+                DrawText(txt, rec.x + (rec.width / 2) - ((float)txt_length / 2), rec.y + (rec.height / 2) - 20, TXT_FONTSIZE, txt_color);
             }
         }
     }
