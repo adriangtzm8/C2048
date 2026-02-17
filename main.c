@@ -9,6 +9,8 @@
 #define HEIGHT 800
 
 #define TXT_FONTSIZE 64
+#define TXT_FONTSIZE_SMALL 48
+
 typedef enum
 {
     NONE = 0,
@@ -30,7 +32,14 @@ typedef enum
     BACKGROUND_YELLOW,
     BACKGROUND_YELLOW_BRIGHT,
     BACKGROUND_BLACK,
-} BackgroundColors;
+} BackgroundColors; // background of each individual square
+
+typedef enum
+{
+	GAMESTATUS_NONE = 0,
+	GAMESTATUS_PLAYING,
+	GAMESTATUS_GAMEOVER
+} GameStatus;
 
 static int grid[4][4];
 static bool has_combined[4][4];
@@ -54,16 +63,22 @@ const int grid_cols = 4;
 void place_random();
 void display_grid();
 void move_tiles(Direction dir);
-void reset_combined();
+void reset_combined(); // resets has_combined array
 bool can_move(Direction dir);
+bool is_full(); // checks if grid is full
 
 // UI
 void draw_grid();
+void draw_end_screen();
 
 int main()
 {
     srandom(time(NULL));
     InitWindow(WIDTH, HEIGHT, "2048");
+    SetTargetFPS(60);
+
+    GameStatus status = GAMESTATUS_PLAYING;
+
     place_random();
     while (!WindowShouldClose())
     {
@@ -85,9 +100,24 @@ int main()
             reset_combined();
             place_random();
         }
+        else
+        {
+       		if (is_full()) // if you can't move and it is full, you lose
+         	{
+          		status = GAMESTATUS_GAMEOVER;
+          	}
+        }
 
         BeginDrawing();
-        draw_grid();
+
+        switch (status)
+        {
+        	case GAMESTATUS_PLAYING: draw_grid(); break;
+         	case GAMESTATUS_GAMEOVER: ClearBackground((Color){ 0, 255, 0, 0});draw_end_screen(); break;
+          	case GAMESTATUS_NONE: break;
+          	default: break;
+        }
+
         EndDrawing();
     }
 
@@ -363,6 +393,21 @@ bool can_move(Direction dir)
     }
 }
 
+bool is_full()
+{
+	for (int i = 0; i < grid_rows; ++i)
+	{
+		for (int j = 0; j < grid_cols; ++j)
+		{
+			if (grid[i][j] == 0)
+			{
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
 void draw_grid()
 {
     for (int i = 0; i < 4; ++i)
@@ -385,4 +430,19 @@ void draw_grid()
             }
         }
     }
+}
+
+void draw_end_screen()
+{
+	const char* txt = "Game Over";
+	int txt_size = MeasureText(txt, TXT_FONTSIZE);
+
+	DrawText(txt, (WIDTH / 2) - (txt_size / 2), HEIGHT / 2 - 50, TXT_FONTSIZE, WHITE);
+
+	const char* txt_2 = "Try Again";
+	int txt_size_2 = MeasureText(txt_2, TXT_FONTSIZE_SMALL);
+
+	Rectangle button = {(int)(WIDTH / 2) - (int)(txt_size_2 / 2), (int)(HEIGHT / 2) + 50, txt_size_2 + 20, TXT_FONTSIZE_SMALL * 1.3};
+	DrawRectangleRounded(button, 0.20f, 20, BROWN);
+	DrawText(txt_2, button.x + 10, button.y + 5, TXT_FONTSIZE_SMALL, WHITE);
 }
